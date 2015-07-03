@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>com.bstonehill.alfred.php-doc-search</string>
+	<key>category</key>
+	<string>Tools</string>
+	<key>connections</key>
+	<dict>
+		<key>197A009F-46D1-4723-B618-6CF103897B90</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>F2AF7C4E-4A15-4913-885D-1DD42F26CA5D</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>Brent Stonehill</string>
+	<key>description</key>
+	<string>Search and launch php.net doc pages from alfred</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>PHP Doc Search</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>plusspaces</key>
+				<false/>
+				<key>url</key>
+				<string>http://php.net/manual/en/{query}.php</string>
+				<key>utf8</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.openurl</string>
+			<key>uid</key>
+			<string>F2AF7C4E-4A15-4913-885D-1DD42F26CA5D</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>100</integer>
+				<key>keyword</key>
+				<string>phpdoc</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>Refreshing search index...</string>
+				<key>script</key>
+				<string>//
+// Load the PHP workflow library.
+//
+include_once("workflows.php");
+ 
+//
+// Create the workflow object to use.
+//
+$wf = new Workflows();
+ 
+//
+// Get the raw query and store it for use.
+//
+$clean = trim("{query}");
+
+try {
+
+	//
+	// Load cached listings and update once daily from php.net
+	//
+	$resultCount = 0;
+	$filename    = $wf-&gt;data() . "/phpdocdata.txt";
+	if ( ! file_exists($filename) || gmdate('mdY') != gmdate('mdY', filemtime($filename)) ) {
+		$data = $wf-&gt;request('http://php.net/js/search-index.php?lang=en');
+		file_put_contents($filename, $data);
+	} else {
+		$data = file_get_contents($filename);
+	}
+
+	//
+	// Filter entries by query and populate results
+	//
+	if ( ! empty($data) ) {
+		$i       = 1;
+		$entries = json_decode($data);
+		foreach ($entries as $id =&gt; $props) {
+			if ($clean == substr($props[0], 0, strlen($clean))) {
+				$wf-&gt;result($i, $id, $props[0], $props[1], "icon.png", "yes");
+				$resultCount++;
+			}
+			$i++;
+		}
+	}
+
+} catch (Exception $e) {
+
+	//
+	// Display PHP errors as a non-selectable entry
+	//
+	$wf-&gt;result('0', '', 'ERROR GETTING RESULTS', $e-&gt;getMessage(), 'icon.png', 'no');
+	$resultCount++;
+
+}
+
+//
+// Add entry for no results
+//
+if ( $resultCount &lt;= 0 ) {
+	$wf-&gt;result('999', '', 'No matches found', '', 'icon.png', 'no');
+}
+
+//
+// Echo out the xml of the choices.
+//
+echo $wf-&gt;toxml();</string>
+				<key>subtext</key>
+				<string>Search php documentation</string>
+				<key>title</key>
+				<string>PHP Doc Search</string>
+				<key>type</key>
+				<integer>1</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>197A009F-46D1-4723-B618-6CF103897B90</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>197A009F-46D1-4723-B618-6CF103897B90</key>
+		<dict>
+			<key>ypos</key>
+			<real>10</real>
+		</dict>
+		<key>F2AF7C4E-4A15-4913-885D-1DD42F26CA5D</key>
+		<dict>
+			<key>ypos</key>
+			<real>10</real>
+		</dict>
+	</dict>
+	<key>webaddress</key>
+	<string></string>
+</dict>
+</plist>
